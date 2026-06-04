@@ -325,6 +325,45 @@ Feel free to fork, improve and contribute to this project!
 
 ---
 
+## 🐳 Running with Docker
+
+### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) installed
+
+### Quick Start
+
+Clone and run with a single command:
+
+```bash
+git clone https://github.com/Userunknown84/Spam-Detection-System.git
+cd Spam-Detection-System
+docker-compose up --build
+```
+
+| Service | URL |
+|---|---|
+| React Frontend | http://localhost |
+| Node.js Backend | http://localhost:3000 |
+| Flask ML API | http://localhost:5000 |
+
+### Stop all containers
+```bash
+docker-compose down
+```
+
+### Architecture in Docker
+
+```
+Browser → nginx (port 80) → node-backend (port 3000) → ml-api (port 5000)
+```
+
+- **ml-api**: Python Flask service that loads the SVM model and serves `/predict`
+- **node-backend**: Node.js API gateway forwarding requests to ml-api
+- **frontend**: React app built with Vite, served via nginx; nginx proxies `/predict` to node-backend
+
+---
+
 ## 📜 License
 
 This project is open-source and available under the MIT License.
