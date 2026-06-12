@@ -19,6 +19,15 @@ model = joblib.load(MODEL_PATH)
 vectorizer = joblib.load(VECTORIZER_PATH)
 label_encoder = joblib.load(LABEL_ENCODER_PATH)
 
+URL_MODEL_PATH = os.getenv("URL_MODEL_PATH", "url_detector.pkl")
+URL_VECTORIZER_PATH = os.getenv("URL_VECTORIZER_PATH", "url_vectorizer.pkl")
+
+url_model = joblib.load(URL_MODEL_PATH)
+url_vectorizer = joblib.load(URL_VECTORIZER_PATH)
+
+# url_detector.pkl predicts numeric classes with no bundled label encoder
+URL_LABELS = {0: "malicious", 1: "safe"}
+
 FEEDBACK_FILE = "feedback_store.csv"
 FEEDBACK_LABELS = set(label_encoder.classes_)
 
@@ -34,15 +43,21 @@ def predict():
         data = request.get_json()
 
         text = data.get("text")
+        input_type = data.get("type", "message")
         if not text:
             # Simple file append for warning
             with open("api.log", "a") as f:
                 f.write(f"WARNING: No text provided at {__import__('datetime').datetime.now()}\n")
             return jsonify({"error": "No text provided"}), 400
 
-        text_vector = vectorizer.transform([text])
-        prediction = model.predict(text_vector)
-        final_output = label_encoder.inverse_transform(prediction)[0]
+        if input_type == "url":
+            text_vector = url_vectorizer.transform([text])
+            prediction = url_model.predict(text_vector)
+            final_output = URL_LABELS.get(int(prediction[0]), "unknown")
+        else:
+            text_vector = vectorizer.transform([text])
+            prediction = model.predict(text_vector)
+            final_output = label_encoder.inverse_transform(prediction)[0]
 
         # Simple file append for prediction log
         text_preview = text[:50] + "..." if len(text) > 50 else text
