@@ -8,16 +8,35 @@ import WordCloud from "../components/WordCloud";
 import FeedbackWidget from "../components/FeedbackWidget";
 import Login from "./Login.jsx";
 import Register from "./Register.jsx";
+import EmailHeaderAnalyzer from "../components/EmailHeaderAnalyzer";
+import BulkSpamDetection from "../components/BulkSpamDetection";
+import SpamInsightsDashboard from "../components/SpamInsightsDashboard";
+import EmailScannerDashboard from "../components/EmailScannerDashboard";
+import { redirect } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function SpamDetector() {
+  const navigate = useNavigate();
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
   const [confidence, setConfidence] = useState(null);
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("message");
   const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("provider") && params.get("code")) {
+      return "scanner";
+    }
+    return "detector";
+  }); // "detector", "bulk", "insights", "authenticity", or "scanner"
   const { user, logout } = useAuth();
-
+  const handleLogout = () => {
+  logout();
+  localStorage.removeItem("user");
+  navigate("/");
+};
+ 
   const {
     themeMode,
     setThemeMode,
@@ -101,7 +120,7 @@ const riskLevel =
         </button>
 
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="px-4 py-2.5 rounded-xl font-bold bg-red-650 hover:bg-red-600 text-white transition-all active:scale-95 shadow-md"
         >
           Logout
@@ -232,18 +251,58 @@ const riskLevel =
             Analyze messages, emails & URLs instantly
           </p>
 
-          <div className="mb-4">
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border font-semibold focus:outline-none focus:ring-2 transition-all ${
-                isDark ? activeTheme.inputDark : activeTheme.input
+          {/* Navigation Tabs */}
+          <div className="flex justify-center gap-2 mb-6 border-b border-slate-500/20 pb-3 text-sm font-bold">
+            <button
+              onClick={() => setActiveTab("detector")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "detector"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
               }`}
             >
-              <option value="message">Message</option>
-              <option value="email">Email</option>
-              <option value="url">URL</option>
-            </select>
+              Spam Detector
+            </button>
+            <button
+              onClick={() => setActiveTab("bulk")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "bulk"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              Bulk Detector
+            </button>
+            <button
+              onClick={() => setActiveTab("insights")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "insights"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              Insights
+            </button>
+            <button
+              onClick={() => setActiveTab("authenticity")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "authenticity"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              Sender Verifier
+            </button>
+            <button
+              onClick={() => setActiveTab("scanner")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "scanner"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              Email Scanner
+            </button>
           </div>
 
           {/* Enhanced Input Section */}
@@ -425,52 +484,15 @@ const riskLevel =
           <WordCloud darkMode={isDark} />
           <FeatureImportance darkMode={isDark} />
 
-          {/* {result && confidence !== null && result !== "Error" && (
-            <div className="mt-4 text-left">
-              <p className="text-xs font-semibold mb-1 opacity-70">
-                Model Confidence: {confidencePct}%
-              </p>
-              <div
-                className={`w-full rounded-full h-2 ${isDark ? "bg-slate-800" : "bg-slate-200"}`}
-              >
-                <div
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    result === "ham" || result === "safe"
-                      ? "bg-green-500"
-                      : result === "spam" || result === "malicious"
-                        ? "bg-red-500"
-                        : "bg-orange-500"
-                  }`}
-                  style={{ width: `${confidencePct}%` }}
-                />
-              </div>
-            </div>
-          )} */}
-
-          {result && result !== "Error" && type !== "url" && (
-            <FeedbackWidget
-              key={`${text}|${result}|${confidence}`}
-              text={text}
-              predictedLabel={result}
-              darkMode={isDark}
-            />
-          )}
-
-          <button
-            onClick={() => {
-              setText("");
-              setResult("");
-              setConfidence(null);
-              setType("message");
-            }}
-            className={`mt-4 w-full py-3.5 rounded-xl font-bold shadow-sm transition-all ${
-              isDark ? activeTheme.btnSecondaryDark : activeTheme.btnSecondary
-            }`}
-          >
-            Reset
-          </button>
-
-          {/* <FeatureImportance darkMode={isDark} /> */}
+                    ) : activeTab === "bulk" ? (
+            <BulkSpamDetection />
+          ) : activeTab === "insights" ? (
+            <SpamInsightsDashboard />
+          ) : activeTab === "scanner" ? (
+            <EmailScannerDashboard />
+          ) : (
+            <EmailHeaderAnalyzer />
+          )
         </div>
       </div>
     </div>

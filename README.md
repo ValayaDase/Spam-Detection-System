@@ -29,6 +29,14 @@ Prediction (Spam / Ham / Offensive)
 ```
 
 ---
+## Routes
+
+Python: (http://localhost:5000 or http://127.0.0.1:5000)
+Node: (http://localhost:3000)
+Reactjs: (http://localhost:5173)
+
+
+---
 ## System Stability & Environment Fixes
 This update addresses critical runtime issues that prevented the system from executing in the local development environment:
 
@@ -349,6 +357,180 @@ This merges `feedback_store.csv` with the original training dataset (`DATASET_PA
 * ✅ Real-time Prediction API
 * ✅ Cross-platform (Web + Mobile)
 * ✅ Scalable Architecture
+
+---
+
+## 🛡️ Email Header Analysis for Sender Verification
+
+Features:
+* **SPF validation**: Verifies if the email sender is authorized by the domain's SPF records.
+* **DKIM validation**: Confirms the email signature matches the sender's public keys.
+* **DMARC validation**: Validates whether alignment passes based on SPF/DKIM verification results.
+* **Return-Path analysis**: Checks for mismatches between the `From` address domain and `Return-Path` domain.
+* **Sender verification**: Identifies display name domain mismatch or domain alignment anomalies.
+
+### Scoring Logic
+* SPF Failure: +30 points
+* DKIM Failure: +30 points
+* DMARC Failure: +30 points
+* Return-Path Mismatch: +20 points
+* Domain Mismatch: +20 points
+
+### Trust Levels
+* `0–20` score: **Trusted**
+* `21–60` score: **Suspicious**
+* `61+` score: **High Risk**
+
+### Endpoint
+
+#### `POST /analyze-email-header`
+Supports both Option A (JSON body) and Option B (`multipart/form-data` with EML file upload).
+
+**Request (Option A - JSON):**
+```json
+{
+  "headers": "From: Alice <alice@example.com>\nReturn-Path: <spammer@evil.com>..."
+}
+```
+
+**Request (Option B - multipart/form-data):**
+Submit files (EML format) under key `file`.
+
+**Response:**
+```json
+{
+  "success": true,
+  "trust_level": "Suspicious",
+  "risk_score": 45,
+  "findings": [
+    "SPF validation failed",
+    "Return-Path mismatch detected"
+  ]
+}
+```
+
+---
+
+## 📬 Gmail & Outlook Integration for Automatic Email Scanning
+
+Allows users to link their Gmail and Outlook accounts securely via OAuth 2.0 and automatically scan the latest incoming emails.
+
+### Features
+* **OAuth 2.0 Integration**: Authorize with Google and Microsoft to scan live inboxes.
+* **Inline Risk Scoring**: Integrates directly with the Sender Verification analysis module to show trust levels (Trusted, Suspicious, High Risk) for each email based on SPF, DKIM, and DMARC headers.
+* **Aggregated Insights**: Displays metrics cards showing Total, Spam/Risk, and Clean emails in the scanned inbox batch.
+* **Collapsible Email Reports**: Expand any scanned email to view the snippet and domain alignment validation details.
+
+### Environment Setup
+
+Add these credentials to your backend `.env` file:
+```env
+# Google OAuth 2.0 Credentials
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Microsoft Graph OAuth 2.0 Credentials
+MICROSOFT_CLIENT_ID=your_microsoft_client_id
+MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret
+```
+
+### Endpoints
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/gmail/auth-url` | Protected | Returns the Google OAuth 2.0 consent page URL |
+| `GET` | `/gmail/connect` | Protected | Exchanges the authorization code for Gmail access/refresh tokens |
+| `GET` | `/gmail/emails` | Protected | Fetches up to 50 of the latest Gmail emails |
+| `GET` | `/outlook/auth-url` | Protected | Returns the Microsoft Graph OAuth 2.0 consent page URL |
+| `GET` | `/outlook/connect` | Protected | Exchanges the authorization code for Microsoft Graph tokens |
+| `GET` | `/outlook/emails` | Protected | Fetches up to 50 of the latest Outlook emails |
+| `POST` | `/scan-emails` | Protected | Fetches latest emails for provider and runs ML classification and header verification |
+
+---
+
+## 🧠 Spam Pattern Insights & Analytics Dashboard
+
+Features:
+* **Top keywords frequency**: Displays the most common keywords associated with threats.
+* **Trending phrases**: Analyzes bigrams/trigrams to identify key word sequences in spam (e.g. `claim your prize`).
+* **Suspicious terms tracking**: Extracts recently flagged tokens from threat classifications.
+* **Category indicators**: Groups common threat indicators by category (Spam, Smishing, Offensive).
+
+### Endpoint
+
+#### `GET /spam-insights`
+Available on both the Node backend (`/spam-insights`, requires authentication) and the Flask ML API (`/spam-insights`).
+
+**Query Parameters:**
+- `limit` (optional, default: 10): Limits the number of keywords/phrases returned.
+- `category` (optional, e.g. `spam`): Filters the source metrics to a specific threat category.
+
+**Example Response:**
+```json
+{
+  "top_keywords": [
+    {"keyword": "free", "count": 45},
+    {"keyword": "prize", "count": 35}
+  ],
+  "trending_phrases": [
+    {"phrase": "click here now", "count": 25},
+    {"phrase": "claim your prize", "count": 20}
+  ],
+  "recent_suspicious_terms": [
+    "crypto giveaway",
+    "verify wallet"
+  ],
+  "category_indicators": {
+    "spam": ["free", "prize", "winner"],
+    "smishing": ["otp", "verify", "bank"],
+    "offensive": ["abusive", "hate"]
+  }
+}
+```
+
+---
+
+## 📁 Bulk Spam Detection
+
+Features:
+* **CSV upload**: Upload a CSV file containing either a `text` or `message` column header (case-insensitive) to run batch predictions.
+* **TXT upload**: Upload a TXT file containing one message per non-empty line.
+* **Bulk predictions**: Batch inference is performed efficiently on the ML model.
+* **Detection statistics**: Displays total messages, spam/non-spam counts, and spam percentages.
+* **CSV report export**: Downloadable CSV file containing the original message and predicted classification.
+
+### Endpoints
+
+#### `POST /bulk-predict`
+Requires `multipart/form-data` file upload with a key name of `file`.
+
+**Example Response:**
+```json
+{
+  "total_messages": 3,
+  "spam_count": 2,
+  "non_spam_count": 1,
+  "spam_percentage": 66.67,
+  "results": [
+    {
+      "message": "Congratulations! You won a free prize",
+      "prediction": "spam"
+    },
+    {
+      "message": "Meeting tomorrow at 10am",
+      "prediction": "ham"
+    }
+  ]
+}
+```
+
+#### `POST /bulk-predict/export`
+Requires `multipart/form-data` file upload with a key name of `file`. Returns a downloadable CSV report file:
+```csv
+message,prediction
+Congratulations! You won a free prize,spam
+Meeting tomorrow at 10am,ham
+```
 
 ---
 
