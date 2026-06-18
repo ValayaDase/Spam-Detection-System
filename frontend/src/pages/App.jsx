@@ -32,11 +32,11 @@ function SpamDetector() {
   }); // "detector", "bulk", "insights", "authenticity", or "scanner"
   const { user, logout } = useAuth();
   const handleLogout = () => {
-  logout();
-  localStorage.removeItem("user");
-  navigate("/");
-};
- 
+    logout();
+    localStorage.removeItem("user");
+    navigate("/");
+  };
+
   const {
     themeMode,
     setThemeMode,
@@ -93,12 +93,8 @@ function SpamDetector() {
 
   const confidenceValue = Number(confidencePct);
 
-const riskLevel =
-  confidenceValue >= 80
-    ? "High"
-    : confidenceValue >= 50
-    ? "Medium"
-    : "Low";
+  const riskLevel =
+    confidenceValue >= 80 ? "High" : confidenceValue >= 50 ? "Medium" : "Low";
 
   return (
     <div
@@ -246,11 +242,9 @@ const riskLevel =
           <h1 className="text-3xl font-extrabold mb-2 tracking-tight">
             📨 Spam Detector
           </h1>
-
           <p className="font-semibold text-sm mb-6 opacity-75">
             Analyze messages, emails & URLs instantly
           </p>
-
           {/* Navigation Tabs */}
           <div className="flex justify-center gap-2 mb-6 border-b border-slate-500/20 pb-3 text-sm font-bold">
             <button
@@ -304,7 +298,8 @@ const riskLevel =
               Email Scanner
             </button>
           </div>
-
+          {activeTab === "detector" ? (
+  <>
           {/* Enhanced Input Section */}
           <div className="relative w-full mb-4 group text-left">
             <textarea
@@ -317,6 +312,7 @@ const riskLevel =
         ? `${activeTheme.inputDark} focus:border-blue-500/50 [&::-webkit-scrollbar-thumb]:bg-slate-700 hover:[&::-webkit-scrollbar-thumb]:bg-slate-600`
         : `${activeTheme.input} focus:border-indigo-500/50 [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400`
     }`}
+    
               rows="5"
               placeholder={
                 type === "url"
@@ -349,7 +345,6 @@ const riskLevel =
               </span>
             </div>
           </div>
-
           <button
             onClick={handlePredict}
             className={`mt-2 w-full py-3.5 rounded-xl font-bold text-white shadow-md active:scale-95 transition-all ${activeTheme.accent}`}
@@ -358,7 +353,6 @@ const riskLevel =
               ? "Analyzing..."
               : `Analyze ${type === "url" ? "URL" : type}`}
           </button>
-
           {/* {result && (
             <div className="mt-4 border border-slate-350/20 rounded-2xl p-2 bg-slate-500/5">
               <div
@@ -374,125 +368,109 @@ const riskLevel =
             </div>
           )} */}
           {result && (
-  <div
-    className={`mt-5 rounded-3xl p-5 shadow-lg border ${
-      isDark
-        ? "bg-slate-900/50 border-slate-700"
-        : "bg-white/70 border-slate-200"
-    }`}
-  >
-    {/* Heading */}
-    <div className="flex justify-between items-center mb-5">
-      <h2 className="text-lg font-bold">
-        📊 Analysis Result
-      </h2>
+            <div
+              className={`mt-5 rounded-3xl p-5 shadow-lg border ${
+                isDark
+                  ? "bg-slate-900/50 border-slate-700"
+                  : "bg-white/70 border-slate-200"
+              }`}
+            >
+              {/* Heading */}
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold">📊 Analysis Result</h2>
 
-      {/* Badge */}
-      <span
-        className={`px-4 py-2 rounded-full text-sm font-bold ${
-          result === "ham" || result === "safe"
-            ? "bg-green-500 text-white"
-            : result === "spam" || result === "malicious"
-            ? "bg-red-500 text-white"
-            : result === "smishing"
-            ? "bg-orange-500 text-white"
-            : "bg-yellow-500 text-white"
-        }`}
-      >
-        {result === "ham" && "✅ Safe"}
-        {result === "safe" && "✅ Safe"}
-        {result === "spam" && "🚫 Spam"}
-        {result === "malicious" && "🚨 Malicious"}
-        {result === "smishing" && "⚠️ Fraud"}
-        {result === "Error" && "⚠️ Error"}
-      </span>
-    </div>
+                {/* Badge */}
+                <span
+                  className={`px-4 py-2 rounded-full text-sm font-bold ${
+                    result === "ham" || result === "safe"
+                      ? "bg-green-500 text-white"
+                      : result === "spam" || result === "malicious"
+                        ? "bg-red-500 text-white"
+                        : result === "smishing"
+                          ? "bg-orange-500 text-white"
+                          : "bg-yellow-500 text-white"
+                  }`}
+                >
+                  {result === "ham" && "✅ Safe"}
+                  {result === "safe" && "✅ Safe"}
+                  {result === "spam" && "🚫 Spam"}
+                  {result === "malicious" && "🚨 Malicious"}
+                  {result === "smishing" && "⚠️ Fraud"}
+                  {result === "Error" && "⚠️ Error"}
+                </span>
+              </div>
 
-    {/* Confidence */}
-    {confidence !== null && result !== "Error" && (
-      <>
-        <p className="text-sm opacity-70 mb-1">
-          Confidence Score
-        </p>
+              {/* Confidence */}
+              {confidence !== null && result !== "Error" && (
+                <>
+                  <p className="text-sm opacity-70 mb-1">Confidence Score</p>
 
-        <h3 className="text-3xl font-bold mb-4">
-          {confidencePct}%
-        </h3>
+                  <h3 className="text-3xl font-bold mb-4">{confidencePct}%</h3>
 
-        {/* Progress Bar */}
-        <div
-          className={`w-full rounded-full h-3 mb-5 ${
-            isDark
-              ? "bg-slate-700"
-              : "bg-slate-200"
-          }`}
-        >
-          <div
-            className={`h-3 rounded-full transition-all duration-500 ${
-              result === "ham" || result === "safe"
-                ? "bg-green-500"
-                : result === "spam" ||
-                  result === "malicious"
-                ? "bg-red-500"
-                : "bg-orange-500"
-            }`}
-            style={{
-              width: `${confidencePct}%`,
-            }}
-          />
-        </div>
+                  {/* Progress Bar */}
+                  <div
+                    className={`w-full rounded-full h-3 mb-5 ${
+                      isDark ? "bg-slate-700" : "bg-slate-200"
+                    }`}
+                  >
+                    <div
+                      className={`h-3 rounded-full transition-all duration-500 ${
+                        result === "ham" || result === "safe"
+                          ? "bg-green-500"
+                          : result === "spam" || result === "malicious"
+                            ? "bg-red-500"
+                            : "bg-orange-500"
+                      }`}
+                      style={{
+                        width: `${confidencePct}%`,
+                      }}
+                    />
+                  </div>
 
-        {/* Risk Level */}
-        <div className="mb-5">
-          <p className="text-sm opacity-70 mb-2">
-            Risk Level
-          </p>
+                  {/* Risk Level */}
+                  <div className="mb-5">
+                    <p className="text-sm opacity-70 mb-2">Risk Level</p>
 
-          <span
-            className={`px-4 py-2 rounded-full text-sm font-semibold ${
-              riskLevel === "Low"
-                ? "bg-green-100 text-green-700"
-                : riskLevel === "Medium"
-                ? "bg-yellow-100 text-yellow-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {riskLevel === "Low" &&
-              "🟢 Low"}
-            {riskLevel === "Medium" &&
-              "🟠 Medium"}
-            {riskLevel === "High" &&
-              "🔴 High"}
-          </span>
-        </div>
+                    <span
+                      className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                        riskLevel === "Low"
+                          ? "bg-green-100 text-green-700"
+                          : riskLevel === "Medium"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {riskLevel === "Low" && "🟢 Low"}
+                      {riskLevel === "Medium" && "🟠 Medium"}
+                      {riskLevel === "High" && "🔴 High"}
+                    </span>
+                  </div>
 
-        {/* Description */}
-        <p className="text-sm opacity-75 leading-relaxed">
-          {(result === "spam" ||
-            result === "smishing" ||
-            result === "malicious") &&
-            "This content contains characteristics commonly found in spam, phishing, or malicious attacks."}
+                  {/* Description */}
+                  <p className="text-sm opacity-75 leading-relaxed">
+                    {(result === "spam" ||
+                      result === "smishing" ||
+                      result === "malicious") &&
+                      "This content contains characteristics commonly found in spam, phishing, or malicious attacks."}
 
-          {(result === "ham" ||
-            result === "safe") &&
-            "No suspicious patterns were detected in this content."}
-        </p>
-      </>
-    )}
-  </div>
-)}
+                    {(result === "ham" || result === "safe") &&
+                      "No suspicious patterns were detected in this content."}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
           <WordCloud darkMode={isDark} />
           <FeatureImportance darkMode={isDark} />
-
-                    ) : activeTab === "bulk" ? (
-            <BulkSpamDetection />
+          </>
+          ) : activeTab === "bulk" ? (
+          <BulkSpamDetection />
           ) : activeTab === "insights" ? (
-            <SpamInsightsDashboard />
+          <SpamInsightsDashboard />
           ) : activeTab === "scanner" ? (
-            <EmailScannerDashboard />
+          <EmailScannerDashboard />
           ) : (
-            <EmailHeaderAnalyzer />
-          )
+          <EmailHeaderAnalyzer />)}
         </div>
       </div>
     </div>
