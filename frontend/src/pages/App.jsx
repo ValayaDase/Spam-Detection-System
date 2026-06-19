@@ -4,6 +4,8 @@ import { useTheme } from "../context/ThemeContext";
 import api from "../utils/axiosInstance";
 import "../App.css";
 import FeatureImportance from "../components/FeatureImportance";
+
+import History from "../components/History";
 import WordCloud from "../components/WordCloud";
 import FeedbackWidget from "../components/FeedbackWidget";
 import Login from "./Login.jsx";
@@ -22,6 +24,12 @@ function SpamDetector() {
   const [confidence, setConfidence] = useState(null);
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("message");
+
+  const [darkMode, setDarkMode] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [theme, setTheme] = useState("ocean");
+  const [showThemes, setShowThemes] = useState(false);
+
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -30,6 +38,7 @@ function SpamDetector() {
     }
     return "detector";
   }); // "detector", "bulk", "insights", "authenticity", or "scanner"
+
   const { user, logout } = useAuth();
   const handleLogout = () => {
     logout();
@@ -411,7 +420,56 @@ function SpamDetector() {
                   <div
                     className={`w-full rounded-full h-3 mb-5 ${
                       isDark ? "bg-slate-700" : "bg-slate-200"
-                    }`}
+                    }`}/>
+                
+              <textarea
+                className={`w-full border p-3.5 rounded-xl focus:outline-none focus:ring-2 resize-none text-sm sm:text-base transition-all ${
+                  isDark ? activeTheme.inputDark : activeTheme.input
+                }`}
+                rows="4"
+                placeholder={
+                  type === "url"
+                    ? "Enter URL to check..."
+                    : type === "message"
+                      ? "Type your message..."
+                      : "Paste your email content..."
+                }
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+
+              <button
+                onClick={handlePredict}
+                className={`mt-5 w-full py-3.5 rounded-xl font-bold text-white shadow-md active:scale-95 transition-all ${activeTheme.accent}`}
+              >
+                {loading
+                  ? "Analyzing..."
+                  : `Analyze ${type === "url" ? "URL" : type}`}
+              </button>
+
+              {result && (
+                <div className="mt-4 border border-slate-350/20 rounded-2xl p-2 bg-slate-500/5">
+                  <div
+                    className={`p-4 rounded-xl font-bold transition-all duration-300 ${getBg()} ${getColor()}`}
+                  >
+                    {result === "ham" && "✅ Safe Message"}
+                    {result === "spam" && "🚫 Spam Detected"}
+                    {result === "smishing" && "⚠️ Fraud Alert"}
+                    {result === "safe" && "✅ Safe URL"}
+                    {result === "malicious" && "🚨 Malicious URL"}
+                    {result === "Error" && "⚠️ Something went wrong"}
+                  </div>
+                </div>
+              )}
+              {/* <WordCloud darkMode={darkMode} /> */}
+
+              {result && confidence !== null && result !== "Error" && (
+                <div className="mt-4 text-left">
+                  <p className="text-xs font-semibold mb-1 opacity-70">
+                    Model Confidence: {confidencePct}%
+                  </p>
+                  <div
+                    className={`w-full rounded-full h-2 ${isDark ? "bg-slate-800" : "bg-slate-200"}`}
                   >
                     <div
                       className={`h-3 rounded-full transition-all duration-500 ${
@@ -459,6 +517,42 @@ function SpamDetector() {
                 </>
               )}
             </div>
+
+              {result && result !== "Error" && type !== "url" && (
+                <FeedbackWidget
+                  key={`${text}|${result}|${confidence}`}
+                  text={text}
+                  predictedLabel={result}
+                  darkMode={isDark}
+                />
+              )}
+
+              <button
+                onClick={() => {
+                  setText("");
+                  setResult("");
+                  setConfidence(null);
+                  setType("message");
+                }}
+                className={`mt-4 w-full py-3.5 rounded-xl font-bold shadow-sm transition-all ${
+                  isDark
+                    ? activeTheme.btnSecondaryDark
+                    : activeTheme.btnSecondary
+                }`}
+              >
+                Reset
+              </button>
+
+              <FeatureImportance darkMode={isDark} />
+            </>
+          ) : activeTab === "bulk" ? (
+            <BulkSpamDetection />
+          ) : activeTab === "insights" ? (
+            <SpamInsightsDashboard />
+          ) : activeTab === "scanner" ? (
+            <EmailScannerDashboard />
+          ) : (
+            <EmailHeaderAnalyzer />
           )}
           <WordCloud darkMode={isDark} />
           <FeatureImportance darkMode={isDark} />
